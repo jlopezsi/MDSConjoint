@@ -1,0 +1,506 @@
+---
+title: "How to use MDSConjoint"
+author: "Jordi L. Sintas"
+date: "`r Sys.Date()`"
+header-includes:
+- \usepackage{fancyhdr}
+- \pagestyle{fancy}
+- \fancyhead[CO,CE]{This is fancy header}
+- \fancyfoot[CO,CE]{And this is a fancy footer}
+- \fancyfoot[LE,RO]{\thepage}
+output: 
+  rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{How to use MDSConjoint}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+# Introducción
+
+MDSConjoint (Marketing Data Science Conjoint) tiene como objetivo mostrar a los estudiantes de grado y posgrado, de marketing avanzado o modelos de comercialización, cómo analizar los datos procedenes de un análisis del conjunto de los atributos de un producto (*Conjoint Analysis*, CA). Esto es, pone énfasis en la estimación de las utilidades parciales, en medir la importancia de los atributos (en qué medida aportan utilidad al individuo) y en la toma de decisiones basadas en datos, a la simulación de las cuotas de mercado que cualquier definición del nuevo producto puede obtener en el mercado dados los perfiles de producto existentes, a la búsqueda del perfil de producto que maximiza la cuota de mercado o el perfil de producto que maximiza el margen de contibución dada la estructura del mercado (Green, Krieger & Wind 2001).
+
+Todo anlálisis conjunto se inicia con la identificación de los atributos y niveles relevantes (mediante reuniones con un grupo de consumidores, por ejemplo), sigue el diseño de un experimento que nos permita estimar las utilidades parciales de los niveles (efectos principales del modelo) y tal vez algunas interacciones entre atributos relevantes, como la marca y el nivel de precio, aunque todo ello con un número de perfiles de producto reducido. Después se realiza el trabajo de campo (evaluación de los perfiles de producto por parte de los individuos); finalmente se realiza la estimación de las utilidades parciales y la simulación de resultados probables con el objeto de facilitar la toma de decisiones. ([ver la documentación del programa SAS sobre marketing]( http://support.sas.com/resources/papers/tnote/tnote_marketresearch.html))
+
+El objetivo de MDSConjoint es facilitar las tareas estimacion de las utilidades parciales de los niveles de los atributos, la importancia de los atributos, y la simulación de los resultados orientados a la toma de decisiones. Existen otros paquetes en R, como `conjoint`, `faisalconjoint` o `support.CEs`. Los dos primeros no abordan la toma de decisiones -la optimización de cuota de mercado o del margen de contribución- y no es fácil la preparación de los datos para la estimación de las utilidades parciales cuando no han sido generados por el propio programa. El último, `support.CEs`, está orientado a una clase de modelos de análisis conjunto denominados modelos de elección discreta o *choice base conjoint models*, CBC (Aizaki 2012).
+
+```{r}
+
+library(MDSConjoint)
+
+```
+
+# Diseño de un nuevo producto basado en el análisis conjunto
+
+El modelo métrico del análisis de un conjunto de atributos de un producto (*metric conjoint analysis*, MCA) se propone medir la utilidad que los diferentes niveles de los atributos de un producto aportan a un individuo o consumidor (Green & Srinivassan 1978). Durante el trabajo de campo los investigadores presentan a los individuos un conjunto de productos definidos por los niveles de los atributos que lo componen, que llamaremos perfiles de producto, y se les pide que valoren la *utilidad* (o *probablidad de compra*) que cada perfil de producto les reportaría (en el modelo métrico) o bien que ordene de mayor a menor su *preferencia* por los productos que le han presentado (modelo no métrico, NMCA), dando lugar a un ranking de perfiles de producto. 
+
+Para medir la apartación de cada nivel de atributo a la utilidad de cada individuo, estimamos un modelo lineal donde regresamos la utilidad o probabilidad de compra sobre los niveles de los atributos. De hecho cuando todos los atributos son nominales, el modelo lineal es equivalente a un modelo anova de efectos principales (Venables & RIPLEY 2002, chapter 6) con los resultados presentados de cierta manera. 
+
+En el modelo MCA los niveles de los atributos toman el papel de variables independientes y las valoraciones que realiza cada uno de los individuos tienen el papel de la variable independiente, la utilidad. Los coeficientes estimados nos proporcionan la utilidad parcial con la que cada nivel contribuye a la utilidad (o probabilidad de compra) de cada perfil de producto: 
+
+ $U_i = X\beta + \epsilon_i$. 
+
+Para facilitar la interpretación de los parámetros del modelo, en la estimación de los coeficientes del modelo, para cada atributo, la suma de los parámetros $\beta$ se restringe a cero:
+ 
+$∑\beta_1j =∑\beta_2j=...=∑\beta_al=0$ 
+
+De esa manera, $\beta_0$ se interpreta como la utilidad media general que aportan los perfiles de producto al individuo (o la probabilidad media de compra), y los parámetros de cada nivel de atributo, que llamaeramos utilidades parciales, indican las variaciones en la utilidad media por el hecho de que el producto incorpore ese nivel en su perfil. La variación máxima en el nivel de utilidad dentro de cada atributo es la aportacion del atributo a la utilidad del individuo. Finalmente, $\epsilon_i$ es el error del modelo en la predicción de las utilidades del individuo *i*, esto es, la diferencia entre las utilidades reportadas por el individuo y las que predice el modelo.
+
+Cuando los individuos, en lugar de reportar la utilidad que creen obtener de cada perfil de producto únicamente ordenan el listado de perfiles de producto, de mayor  a menor preferencia, decimos que estamos ante el caso de un modelo no métrico de análisis conjunto, NMCA. En este caso, en lugar de estimar un modelo de regresión ordinario, realizamos una transformación monótona de la ordenación de los perfiles en niveles de utilidades. 
+
+ $\gamma(y_i) = X\beta + \epsilon_i$. 
+ 
+Concretamente realizamos la transfromación que proponen en el informe técnico de SAS (SAS, 1993). Debido a la transformación realizada, el ajuste del modelo no métrico siempre será tan bueno o mejor que el ajuste de un modelo métrico con los mismos datos (Young, 1981; Gifi, 1990).
+
+```{r, echo=FALSE}
+if(!require(support.CEs)){
+  install.packages("support.CEs", deps=T, repos="http:cran.us.r-project.org")
+}
+  library(support.CEs) 
+```
+
+
+```{r}
+data("MDSConjointData")
+names(MDSConjointData)
+tire<-MDSConjointData$tire
+tire$design
+```
+
+Veamos un ejemplo. En este paquete hemos incorporado los datos que proporciona el programa SAS sobre el diseño de un neumático. Se consideran cuatro atributos:  `r names(tire$design)`. ([SAS tire data exemple](http://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_transreg_sect062.htm))
+
+Consideramos tres niveles para el atribudo *Brand*, (`r tire$design$Brand`), tres niveles para el atribudo *Price*, (`r tire$design$Price`), tres para la vida media del neumático *Life*, (`r tire$design$Life`), y dos niveles para la garantía *Hazard*, (`r tire$design$Hazard`)
+
+Para medir los efectos principales de los niveles de los atributos y los efectos de todas las interacciones entre los niveles es necesario que el consumidor valore todas las combinaciones posibles, en este caso: 3x3x3x2=`r 3*3*3*2`. Pero es un número muy elevado de perfiles de producto. La función `expand.grid()` nos proporciona todas las combinaciones posibles entre los niveles de producto.
+
+```{r}
+experiment = expand.grid(
+  tire$design
+)
+class(experiment)
+head(experiment)
+tail(experiment)
+length(experiment)
+```
+
+Esto es lo que llamamos el experimento factorial completo, *full design*. Para reducirlo bsucamos una fracción del experimento completo que tenga la propiedad de que las variables sean independientes, es decir, que su correlazión sea cero. 
+
+Por ello normalmente se busca el número de perfiles necesario para poder estimar los efectos principales de los niveles de los atributos y en algunos casos, tambien, las interacciones de primer nivel entre los niveles de algunos atributos, como puede ser la marca y el precio.
+
+Para estimar los efectos principales de los niveles de los atributos en la utilidad del consumidor escogemos los perfiles de producto necesarios para estimarlos de manera que el error sea mínimo una vez eliminadas las interacciones que no queremos estimar. Este experimento reducido nos lo proporciona una fracción de perfiles de producto que tienen la propiedad de que las variables son independientes.
+
+Utilizamos la función `Lma.design()` del paquete `support.CEs`. La función `Lma.desgin()` nos proporciona un conjunto ortogonal de perfiles de producto que nos permite estimar los efectos principales de los niveles de los atributos. El resultado lo guardamos en el objeto `tire.survey`, en este caso.
+
+```{r}
+# generate a balanced set of product profiles for survey
+tire.survey <- Lma.design(attribute.names = 
+                                tire$design, 
+nalternatives = 1, nblocks=1, seed=9999)
+names(tire.survey)
+tire.survey
+```
+
+El paquete `support.CEs`, además, nos proporciona una función para preparar el questionario que utilizaremos para que los consumidores valoren el conjunto de perfiles.
+
+```{r}
+print(questionnaire(tire.survey))  # print survey design for review
+#sink("questions_for_survey.txt")  # send survey to external text file
+#questionnaire(tire.survey)
+#sink() # send output back to the screen
+```
+# La evaluación de los perfiles valorados por los consumidores
+
+Esos `nrows(tire.survey$alternatives)` perfiles de producto pueden ser evaluados de diferentes maneras. Los individuos pueden simplemente ordenar la lista de mayor  a menor preferencia, de manera que el perfil que está en la primera posición del ranking es el perfil de producto con mayor preferencia. Esta forma de evaluar los perfiles de producto daría lugar a un análisis conjunto no métrico.
+
+Por otro lado, los individuos también pueden evaluar los perfiles en función de la utilidad que creen que les reportaran, repartiendo, por ejemplo 100 puntos entre los perfiles de producto evaluados. 
+
+El programa `TRANSREG` del paquete de analisis de datos SAS, en cambio, propone evaluar los perfiles en función de la probablidad de compra, que es equivalente a distribuir 100 puntos entre los perfiles de proucto evaluados. ([ver](http://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_transreg_sect062.htm))
+
+> 1) For your next tire purchase, how likely are you to buy this product?   
+>
+>   Pirogi brand tires at $79.99,                                                
+>   with a 50,000 tread life guarantee,                                          
+>   and without road hazard insurance.
+>
+>   Definitely Would                  Definitely Would                            
+>   Not Purchase                      Purchase 
+>
+>   1    2     3   4     5    6    7     8   9                            
+
+
+# La estimación de las las utilidades parciales de los niveles de los atributos
+
+El modelo de análisis conjunto se estima para cada individuo de la muestra. La función `conjoint.estimation()` estima un modelo lineal para cada uno de los individuos y reporta el resultado detallado del modelo lineal. Después muestra una tabla de datos resumen de los parámetros estimados para toda la muestra y finalmente una tabla resumen de las utilidades parciales de cada uno de los niveles de los atributos incorporados en el modelo así como una tabla con las utilidades (o probablidades) teóricas que predice el modelo. La correlación entre esta última tabla y la tabla con las valoraciones empíricas proporcionadas por los individuos nos da una medida del ajuste medio de las estimaciones.
+
+## Estimación del modelo para toda la muestra individuos
+
+La función `conjoint.estimation()` toma como argumentos:
+
+1. Una base de datos rectangular con las valoraciones de los individuos de los perfiles de producto, que llamamos *ratings*, con tantas filas como individuos han valorado el conjunto de perfiles de producto, *n*, y tantas columnas como perfiles de producto hayamos presentado a los individuos, *p*. Esta tabla de datos tendrá un formato de `data frame` y una dimensión de *n,p*. 
+
+2. Una base de datos con los perfiles de productos que han valorado los individuos, que llamamos *bundles*, con tantas filas como perfiles de producto hayan valorado los individuos, *p*, y tantas columnas como atributos tengan los perfiles de producto, *a*. Esta matriz que tendrá un formato de `data frame` y una dimensión de *p,a*. 
+
+3. Una lista con los atributos y niveles de los atributos que forman los perfiles valorados. Esta lista que tendrá un formato de `list`. 
+
+4. Finalmente si las valoraciones de los indiviudos toman la forma de una ordenación de preferencias, entonces `rank=1` indica al programa que estamos ante un modelo no métrico y es necesario realizar una transformación de las preferencias en utilidades. Si el modelo es métrico, entonces no es necesario indicar nada.
+
+
+```{r}
+tires.partWorthsAll<-conjoint.estimation(tire$ratings, tire$bundles, tire$design) 
+names(tires.partWorthsAll)
+names(tires.partWorthsAll$summary)
+names(tires.partWorthsAll$summary$Subj2)
+
+```
+
+La función `conjoint.estimation()` nos devuelve un objeto con formato `list` y cuatro objetos: `r names(tires.partWorthsAll)`.
+
+El objeto summary, al que se puede acceder con la orden `tires.partWorthsAll$Summary`, nos proporciona los resutlados detallados del modelo para cada uno de los individuos. Para acceder a ellos sólo es necesario añadir el nombre del individuo a la orden anterior: `tires.partWorthsAll$Summary$Subj1` en este ejemplo. Sí únicamente queremos acceder a los coeficientes estimados, tenemos que añadir `$coefficients` a la orden anterior: `tires.partWorthsAll$Summary$Subj1$coefficients`. En el trozo de código siguiente podemos ver los nombrs de los individuos, `names(tires.partWorthsAll$summary)` y podemos observar los resutlados para el individuo `Subj2`:
+
+```{r}
+names(tires.partWorthsAll$summary)
+knitr::kable(tires.partWorthsAll$summary$Subj2$coefficients, digits=2, caption = 'Coeficientes del modelo estimado para el individuos Subj2' )
+```
+
+Si queremos acceder a todos los demás objetos que forman los resultados del modelo, sólo tenemos que sustituir `coefficients` por el nombre del resultado que queremos inspeccionar (ver el resultado de `r names(tires.partWorthsAll$summary$Subj2)`).
+
+## Resumen de las estimaciones
+
+La tabla de datos con el resumen de los coeficientes estimados para toda la muestra se muestran en el objeto `fit`. Para acceder sólo tenemos que utilizar la orden siguiente: `tires.partWorthsAll$fit`. Nos proporciona una base de datos con tantas filas como individuos han valorado el conjunto de perfiles de producto y tantas columnas como niveles de los atributos menos uno. En este ejemplo, tendríamos (3-1)+(3-1)+(3-1)+(2-1)+1=8. Si no queremos ver toda la base de datos podemos inspeccionar su inicio y final con las funciones `head()` y `tail()`, y en entre paréntesis sólo tenemos que poner el nombre del objeto, `tires.partWorthsAll$fit` en este caso. Utilizamos la función `kable()` para dar formato a la tabla de datos.
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(tires.partWorthsAll$fit), digits=2, caption = 'Estimaciones: Resultados de los 6 primeros individuos' )
+```
+
+## Estimación de las utilidades parciales
+
+Para completar los resultados de las estimaciones, la funcion `conjoint.estimation()` nos proporciona una base de datos con las utilidades parciales de cada uno de los niveles, incluidos los que se han eliminado para poder estimar el modelo (si no los hubieramos eliminados, el modelo no se podría haber estimado). La tabla de datos tiene tantas finals como perfiles de producto, *p*, y tantas columnas como niveles de atributos hemos considerado en el análisis: *3+3+3+2=11* en este caso de los neumáticos. Esta forma de mostrar las utilidades parciales de cada nivel nos facilita el cálculo de la importancia de cada atributo como veremos después. De nuevo utilizamos la función `kable()` para dar formato a la tabla de datos.
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(tires.partWorthsAll$part.worths), digits=2, caption = 'Utilidades parciales: Resultados de los 5 primeros individuos' )
+```
+
+Finalmente la tabla de datos con las predicciones teóricas de la utilidad que reportan los perfiles de producto para toda la muestra se pueden obtener con el objeto `prediction`. Para acceder sólo tenemos que utilizar la orden siguiente: `tires.partWorthsAll$prediction`. Nos proporciona una tabl de datos con tantas filas como individuos han valorado el conjunto de perfiles de producto, *n*, y tantas columnas como niveles com perfiles han valorado, *p*. Si no queremos ver toda la base de datos podemos inspeccionar su inicio y final con las funciones `head()` y `tail()`, y en entre paréntesis sólo tenemos que poner el nombre del objeto, `tires.partWorthsAll$prediction` en este caso. Utilizamos la función `kable()` para dar formato a la tabla de datos.
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(t(tires.partWorthsAll$prediction)), digits=2, caption = 'Estimaciones: Resultados de los 6 primeros individuos' )
+```
+## Estimación del modelo únicamente para un individuo
+
+La función `conjoint.estimation()` también se puede utilizar para estimar el modelo sólo para un individuo o para un grupo de invidiuos. Esta posibilidad es interesante para valorar las utilidades parciales de un determinado segmento. Sólo tenemos que indicar que únicamente queremos que estime el modelo para un indiviuo en concreto o para un grupo de invidividuos, por ejemplo para el primer individuo de la muestra. Para ello utilizamos los corchetes y dentro de ellos indicamos la fila en la que está el individuo y una coma que indicada que utilizaremos todas las columnas de la base de datos: `[1,]`.
+
+La estimación del modelo con devuelve los mismos objetos: una lista con los resultados detallados, una tabla de datos con los coeficientes de la estimación, otra lista de datos con las utilidades parciales de cada nivel de atributo para el individuo o el subconjunto de invidiuos, y una tabla de datos con las predicciones del modelo, o utilidades teóricas.
+
+```{r}
+tires.partWorths1<-conjoint.estimation(tire$ratings[1,], tire$bundles, tire$design)
+names(tires.partWorths1)
+names(tires.partWorths1$summary$Subj1)
+```
+
+```{r}
+knitr::kable(tires.partWorths1$summary$Subj1$coefficients, digits=2, caption = 'Coeficientes del modelo estimado para el individuos Subj1' )
+
+```
+
+```{r}
+knitr::kable(head(tires.partWorths1$fit), digits=2, caption = 'Estimaciones: Resultados de *j* individuos' )
+```
+
+```{r}
+knitr::kable(head(tires.partWorths1$part.worths), digits=2, caption = 'Utilidades parciales: Resultados de *j* individuos' )
+```
+
+
+# Cálculo de la importancia de los atributos
+
+La función `importance.of.attributes()` nos proporciona tres tablas de datos. La primera es el resumen de los coeficientes estimados, `fit`, la segunda es la tabla de las utilidades parciales, `part.worths`, y la tercera la tabla resumen de la importancia de los atributos para los individuos de la muestra, `imp`.
+
+```{r}
+tires.imp <- importance.of.attributes(tire$ratings, tire$bundles, tire$design)
+names(tires.imp)
+```
+
+En este momento nos interesan las dos últimas tablas. La tabla `part-worths` y la tabla `imp`. 
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(tires.imp$part.worths),digits=2, caption = 'Utilidades parciales: Resultados de los 5 primeros individuos' )
+```
+
+## Importancia de los atributos
+
+La primera tabla nos permite calcular la importancia de los atributos como la diferencia en el valor mínimo y el máximo de las utilidades parciales reportadas por los niveles de cada atributo. La tabla `imp` nos proporciona el resumen para todos los individuos, en porcentaje.
+
+```{r}
+knitr::kable(head(tires.imp$imp),digits=2, caption = 'Importancia de los atributos: Resultados de los 5 primeros individuos' )
+```
+
+Finalmente si queremos conocer la importancia media para toda la muestra, sólo tenemos que calcular la media de las columnas de la tabla `imp`. Para ello utilizamos la función `apply()` y como armentos la tabla de datos `tires.imp$imp`, el número `2` que indica que queremos trabajr con las columnas de la tabla, y la función `mean` para indicar que queremos calcular la media de las columnas. Utilizamos la función `kable()` para dar formato a la tabla.
+
+```{r}
+mean(tires.imp$imp$Brand)
+class(tires.imp$imp$Brand)
+knitr::kable(apply(tires.imp$imp, 2, mean),digits=2, caption = 'Importancia media de los atributos' )
+```
+
+## Visualización de la importancia
+
+Finalmente podemos visualizar la importancia media de los atributos con la función `visualize.importance` que necesita como argumentos la tabla de datos con las utilidades parciales, `tires.imp$part.worths`, la tabla de datos con las importancias en procentajes, `tires.imp$imp`, y la lista con los nombre de los atributos y niveles, `tires$design`. 
+
+```{r, fig.cap="Importance of Attributes"}
+visualize.importance(tires.imp$part.worths,tires.imp$imp, tire$design)
+```
+
+# Simulación de la respuesta del mercado
+
+El paquete `MDSConjoiont` también nos proporciona un conjunto de funciones para tomar decisiones con los resultados del análsis conjunto. Concretamente podemos simular las cuotas de mercado que ciertos perfiles de producto obtedrían en el mercado, e identificar el perfil de producto que maximizaría la cuota de mercado de la empresa, dados los perfiles de producto existentes en el mercado. Veámoslo con el ejemplo sintético de Office System que proporciona el libro *Marketing Engineering* (Lilien & Ramaswamy 2003)
+
+## Description Office System data
+
+This artificial data is about the design of a office store, the kind of of products to offer, office supplies, forniture, and computers and software, and the location of the store. The levels of each attribute can be browsed with the `design` object of the list `osc`.
+
+Primero seleccionaremos los datos del ejemplo Office System asignándolos al objeto `osc`, y después obtenemos los datos del diseño.
+
+```{r}
+osc<-MDSConjointData$osc
+osc$design
+```
+
+## Estimación del modelo
+
+Seguidamente estimaremos el modelo para todos los individuos de la muestra utilizando la función `conjoint.estimation()` y como argumentos las valoraciones de los individuos, `osc$ratings`, la descripción de los perfiles de producto valorados, `osc$bundles`, y la descripción de los atributos y niveles, `osc$design`.
+
+```{r}
+osc.partWorthsAll<-conjoint.estimation(osc$ratings, osc$bundles, osc$design) 
+class(osc.partWorthsAll)
+names(osc.partWorthsAll)
+names(osc.partWorthsAll$summary)
+names(osc.partWorthsAll$summary$Respondent1)
+```
+
+Ahora vamos a observar los resultados para el individuos número 1, `Respondent1`, utilizando la orden `osc.partWorthsAll$summary$Respondent1`. Para inspeccionar únicamente los coeficientes estimados utiizamos la orden `osc.partWorthsAll$summary$Respondent1$coefficients`. Los resultados los podemos ver en la siguiente tabla.
+
+```{r}
+knitr::kable(osc.partWorthsAll$summary$Respondent1$coefficients, digits=2, caption = 'Estimación del modelo lineal: coeficientes del primer individuo' )
+```
+
+### Resumimos las estimaciones en una tabla de datos
+
+En esta tabla podemos ver el inicio de la tabla de datos con las estimaciones de los 6 primeros individuos de la muestra,
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(t(head(osc.partWorthsAll$fit)), digits=2, caption = 'Estimaciones: Resultados de los 6 primeros individuos' )
+
+```
+
+### Resumimos las utilidades parciales en una tabla de datos
+
+El tercer objeto que nos proporciona la función `conjoint.estimation()` es la tabla de datos con las utilidades parciales de los 6 primeros individuos si utilizamos la función `head()`.
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(t(head(osc.partWorthsAll$part.worths)), digits=2, caption = 'Estimaciones: Resultados de los 6 primeros individuos' )
+
+```
+
+### Resumimos las utilidades teóricas que predice el modelo
+
+El cuarto objeto que nos proporciona la funicón es la tabla resumen de las predicciones teóricas del modelo, `prediction`. La correlación entre las utilidades teóricas proporcionadas por el modelo y la empíricas proporcionadas por los individuos nos da una medida sintética de la bondad del ajuste del modelo.
+
+### Importancia de los atributos
+
+Como en el ejemplo de los neumáticos, la función `importance.of.attributes()` nos proporciona tres tablas de datos, una con el resumen de los coeficientes estimados, `fit`, otra con las utilidades parciales, `part.worths`, y la tercera con la importancia de cada atributo para cada individuo, en porcentje. 
+
+Con la función `kable()`del paquete `knitr` podemos presentarlos en una tabla bien formateada.
+
+```{r}
+osc.imp <- importance.of.attributes(osc$ratings, osc$bundles, osc$design)
+names(osc.imp)
+knitr::kable(head(osc.imp$imp),digits=2, caption = 'Importancia de los atributos: Resultados de los 5 primeros individuos' )
+```
+
+Para obtener la importancia media de cada uno de los atributos que dan forma a los perfiles de producto valorados, sólo tenemos que calcular la media de las columnas de la tabla `imp`. Para ello utilizamos la función `apply()` y como armentos la tabla de datos `tires.imp$imp`, el número `2`que indica que queremos trabajr con las columnas de la tabla, y la función `mean` para decir que queremos calcular la media de las columnas. Utilizamos la función `kable()` para dar formato a la tabla.
+
+```{r}
+mean(osc.imp$imp$Location)
+class(osc.imp$imp$Location)
+knitr::kable(apply(osc.imp$imp, 2, mean), digits=2, caption = 'Resumen importancia atributos' )
+
+```
+
+### Visualización importancia atributos
+
+Finalmente podemos visualizar la importancia media de los atributos con la función `visualize.importance()` que necesita como argumentos la tabla de datos con las utilidades parciales, `osc.imp$part.worths`,  la tabla de datos con las importancias en procentajes, `osc.imp$imp`, y la lista con los nombres de los atributos y niveles, `osc$design`. 
+
+```{r, fig.cap="Importance of Attributes"}
+visualize.importance(osc.imp$part.worths, osc.imp$imp, osc$design)
+```
+
+## Simulación de las cuotas de mercado
+
+Para simular las cuotas de mercado necesitamos información acerca de los perfiles de producto de la competencia existentes en el mercado, `osc$market.profiles` en este caso. 
+
+```{r}
+dim(osc$market.profiles)
+knitr::kable(osc$market.profiles, digits=2, caption = 'Market profiles')
+```
+
+También necesitamos la tabla de datos con la descripción de los perfiles de producto valorados por los individuos, `osc$bundles` en este caso.
+
+```{r}
+knitr::kable(osc$bundles, digits=2, caption = 'Bundles of attributes to be rated')
+```
+
+Para completar los datos necesitamos también la valoración que han realizado los consumidores de los perfiles de productos, `osc$ratings`.
+
+```{r}
+knitr::kable(t(head(osc$ratings)), digits=2, caption = 'Ratings of bundles by individulas')
+```
+
+La función `utilities.of.profiles()` nos predice la utilidad que obtedría cada uno de los perfiles de producto de la competencia existene en el mercado. Esta función proporciona una tabla de datos con tantas filas como individuos tenemos en la muestra, *n*, y tantas columnas como marcas, *m*, tenemos en el objeto `osc$market.profiles`.
+
+```{r}
+dim(utilities.of.profiles(osc$market.profiles, osc$ratings, osc$bundles))
+knitr::kable(head(utilities.of.profiles(osc$market.profiles, osc$ratings, osc$bundles)), digits=2, caption = 'Ratings of bundles by individulas')
+```
+
+Para predecir las cuotas de mercado primero tenemos que decidir qué regla de elección con mayor probabilidad utilizarán los consumidores a la hora de realizar sus elecciones: la regla de la máxima utilidad (primera elección), la regla de la cuota de preferencia (también denominada BTL), y la regla logit. Para el primer caso disponemos de la función `ms.fe.conjoint()`, para le segundo, `ms.us.conjoint()`, y para el tercero, `ms.logit.conjoint()` (Green & Krieger 1995).
+
+Máxima utilidad (1ª elección): $p_i(J_k)= 1, si U(J_k)=max(U(J_k))$, si no $p_i(J_k)= 0$
+
+Cuota de utilidad (BTL): $p_i(J_k)= U(J_k)/∑U(J_k)$
+
+Regla logit: $p_i(J_k)= exp(U(J_k))/∑exp(U(J_k))$
+
+Las tres funciones necesitan como argumento tres tablas de datos, la tabla con los perfiles de mercado para los que vamos a simular las cuotas de mercado, `osc$market.profiles`, la base de datos con las valoraciones realizadas por los individios, `osc$ratings`, y la base de datos con la descripción de los perfiles de producto valorados, `osc$bundles`, en este caso. 
+
+En el caso de la máxima utilidad o primera elección la cuota de mercado para las dos marcas existentes en el mercado es: 
+
+```{r}
+knitr::kable(ms.fe.conjoint(osc$market.profiles, osc$ratings, osc$bundles), digits=2, caption = 'Regla de la maxima utildad')
+ms.fe.conjoint(osc$market.profiles, osc$ratings, osc$bundles)
+```
+
+Si los individuos utilizaran la regla de la cuota de preferencia, las cuotas serían:
+
+```{r}
+knitr::kable(ms.us.conjoint(osc$market.profiles, osc$ratings, osc$bundles), digits=2, caption = 'Regla de la cuota de preferencia')
+```
+
+Si los individuos utilizaran la regla logit, las cuotas estimadas serían:
+
+```{r}
+knitr::kable(ms.logit.conjoint(osc$market.profiles, osc$ratings, osc$bundles), digits=2, caption = 'Regla logit')
+```
+
+## Búsqueda del producto que maximiza el la cuota de mercado
+
+Si estamos interesados en identificar el perfil que maximiza la cuota de mercado de la empresa dados los perfiles de producto de la competencia, disponemos de las funciones `optim.ms.first.choice()`, `optim.ms.utility.share()` y `optim.ms.logit()` que utilizaremos en función de la regla de decisión que utilicen los individuos.
+
+En todos los casos, la función  necesita como argumentos las valoraciones de los consumidores, `osc$ratings`, la descripción de los perfiles valorados, `osc$bundles`, los perfiles de producto de la competencia, `osc$market.profiles`, la descripción de todos los atribulos y niveles que forman pueden formar los perfiles de producto, `osc$design`, y el argumento *hide progress bar*, `hpb=1`, en el caso de que no queramos ver la barra de progreso del proceso de optimización (la identificación del óptimo puede tardar un poco dependiendo de la capacidad de proceso del ordenador). Este último argumento es interesante cuando utilizamos la función en un documento rmarkdown como en este caso. 
+
+La función nos devuelve una lista con dos objetos. El primero nos muestra la descripción del perfil óptimo y el segundo la cuota de mercado que obtendría la competencia y el producto que maximiza la cuota de mercado.
+
+### First election or maximum utilitiy
+
+```{r}
+osc.ms.op.1choice<-optim.ms.first.choice(osc$ratings, osc$bundles, osc$market.profiles, osc$design, hpb=1)
+knitr::kable(osc.ms.op.1choice, digits=2, caption = 'Regla máxima utilidad')
+```
+
+### Market share
+
+```{r}
+osc.ms.op.us<-optim.ms.utility.share(osc$ratings, osc$bundles, osc$market.profiles, osc$design, hpb=1)
+knitr::kable(osc.ms.op.us, digits=2, caption = 'Regla de la cuota de preferencia')
+```
+### Logit rule
+
+```{r}
+osc.ms.op.logit<-optim.ms.logit(osc$ratings, osc$bundles, osc$market.profiles, osc$design, hpb=1)
+knitr::kable(osc.ms.op.logit, digits=2, caption = 'Regla de la cuota de preferencia')
+```
+
+# Conclusiones
+
+Esta primer versión del paquete `MDSConjoint` nos proporciona herramientas para facilitar la toma de decisiones, la simulación de la cuota de mercado de cualquier perfil de producto, dada la competencia, la obtención del perfiil que maximiza la cuota de mercado o el margen de contribución (Green, Carroll, & Goldberg, 1981; Green & Krieger, 1995).
+
+Futuras versiones introducirán algoritmos basados en programación dinámica con el objeto de utilizar algoritmos más eficiente en la obtención del producto óptimo (Kohli & Krishnamurthy 1989). Otras mejoras están orientadas a incrementar la funcionalidad del paquete en la toma de decisiones comerciales, como la configuración de una línea de productos (Green & Krieger 1992; Michalek, Ebbes, Adigüzel, Feinberg, and Papalambros 2011), la simulación de de cuotas de mercado para niveles de producto, como el precio, que no se han considerado expresamente  en el diseño del análisis conjunto (Pekelman & Sen 1979), segmentación de mercados según las utilidades parciales (Green & Krieger 1991), o las decisiones de precios (Kohli & Mahajan 1991), etc.
+
+#Referencias
+
+Aizaki, H. (2012). Basic Functions for Supporting an Implementation of Choice Experiments in R | Aizaki | J. Journal of Statistical Software, 50. Retrieved from https://www.jstatsoft.org/article/view/v050c02
+
+Green, P. E., & Krieger, A. M. (1995). Attribute importance weights modification in assessing a Brand’s competitive potential. Marketing Science, 14(3), 253–270.
+
+Green, P. E., & Krieger, A. M. (1988). Choice Rules and Sensitivity Analysis in Conjoint Simulators. Journal of the Academy of Marketing Science, 16(1), 114–127. http://doi.org/10.1177/009207038801600110
+
+Green, P. E., & Srinivasan, V. (1978). Conjoint Analysis in Consumer Research: Issues and Outlook. Journal of Consumer Research, 5(September), 103–123.
+
+Green, P. E., Carroll, J. D., & Goldberg, S. M. (1981). A General Approach to Porducht Design Optimization via Conjoint Analysis. Journal of Marketing, 45(Summer), 17–37.
+
+Green, P. E., & Krieger, A. M. (1992). An application of a product positioning model to pharmaceutical products. MARKETING SCIENCE, 11(2).
+
+Green, P. E., Krieger, A. M., & Wind, Y. (2001). Thirty Years of Conjoint Analysis: Reflections and Prospects. Interfaces, 31(3_supplement), S56–S73. http://doi.org/10.1287/inte.31.3s.56.9676
+
+Green, P. E., & Krieger, A. M. (1991). Segmenting Markets with Conjoint Analysis. Journal of Marketing, 55(4), 20–31. http://doi.org/10.2307/1251954
+
+Kohli, R., & Mahajan, V. (1991). A Reservation-Price Model for Optimal Pricing of Multiattribute Products in Conjoint Analysis. Journal of Marketing Research, 28(August), 347–354.
+
+Kohli, R., & Krishnamurthy, R. (1989). Optimal product design using conjoint analysis: Computational complexity and algorithms. European Journal of Operational Research, 40, 186–195.
+
+Lilien, Gary L., and Arvind Rangaswamy. Marketing Engineering: Computer-Assisted Marketing Analysis and Planning by Gary L. Lilien. Pearson, 2003.
+
+Michalek, Jeremy J., Peter Ebbes, Feray Adigüzel, Fred M. Feinberg, and Panos Y. Papalambros. “Enhancing Marketing with Engineering: Optimal Product Line Design for Heterogeneous Markets☆☆☆.” International Journal of Research in Marketing, January 2011. doi:10.1016/j.ijresmar.2010.08.001.
+
+Pekelman, D., & Sen, S. K. (1979). Improving Prediction in Conjoint Measurement. Journal of Marketing Research, 16(2), 211–220. http://doi.org/10.2307/3150685
+
+SAS Institute Inc.(1993), *SAS TeclmicalReport R-109, Conjoint Analysis Examples*, Gary, NC: SAS Institute Inc.,85 pp.
+
+# Anexo: leer los datos de una fuente externa
+
+El paquete `XLConnect` y junto con el complemento `XLConnectJars` nos proporcionan la posibilidad de leer libros de hojas electrónicas en formalo `xlsx`.
+
+```{r}
+require(XLConnect)
+require(XLConnectJars)
+```
+
+La función `readWorksheet()` nos permite leer un libro de hojas electrónicas,  `sas-conjoint.xlsx` por ejemplo, y guardarlo en el objeto `tireData`, por ejemplo.
+
+```{r}
+tireData <- loadWorkbook("sas-conjoint.xlsx", create = T) #loading the spreadshit book
+
+```
+
+Después podemos ir leyendo las diferentes hojas que nos interesan: `ratings`, `design` y `bundles`. La primera contiene las evaluación de los individuos, la segunda los atributos y niveles utilizados en el estudio, y la última, `bundles`, contiene la descripción de los perfiles de producto. 
+
+```{r}
+# -- Read in conjoint rating data 
+tiresBundles <- readWorksheet(tireData, rownames=1, sheet = "bundles", header = TRUE) #load the set of bundles rated by informants
+tiresDesign <- readWorksheet(tireData, sheet = "design", header = TRUE) #read conjoint desing
+tiresDesign.l <- df2list(tiresDesign)
+tiresDesign.l
+tiresRatings <- readWorksheet(tireData, rownames=1, sheet = "ratings", header = TRUE)
+```
+También podemos leer los datos en formato `csv`. 
+
+```{r}
+tirebundles <- read.table("tirebundles.csv", row.names=1, header=T, dec = ".", sep=";")
+tiredesign <- read.table("tiredesign.csv", header=T,  sep=";")
+tiresDesign.l <- df2list(tiresDesign)
+tiresDesign.l
+tireratings <- read.table("tireratings.csv", row.names=1, header=T, sep=";")
+
+```
+
+Un vez leidos los datos podemos comprobar si la lectura de datos ha sido correcta. Para ello utilizamos las funciones `head()`, `tail()`y `dim()`.
+
+```{r}
+tiredesign #conjoint design
+dim(tirebundles) #check the dimensions of bundles data frame
+class(tirebundles) #ckeck the data class
+head(tirebundles)
+tail(tirebundles)
+head(tireratings) #checking data
+tail(tireratings)
+dim(tireratings)
+```
+
