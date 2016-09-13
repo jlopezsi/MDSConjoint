@@ -60,7 +60,6 @@ if(!require(support.CEs)){
 
 
 ```{r}
-#install_github("jlopezsi/MDSConjoint")
 data("MDSConjointData")
 names(MDSConjointData)
 tire<-MDSConjointData$tire
