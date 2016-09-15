@@ -291,7 +291,8 @@ visualize.importance <- function(part.worths, importance, design.l) {
     index<-index+length(design.l[[j]])
     ln<-as.character(eval(parse(text = paste("design.l$", names(design.l[j]), sep="")))) #compose the the levels' labels
     plot(data.to.plot, type="b", xaxt="n", main=names(design.l[j]), xlab= "Levels", ylab="Utility")
-    axis(1, at=1:length(eval(parse(text = paste("design.l$", names(design.l[j]), sep="")))), labels=ln, las = 1) #plot the axis with the levels' names
+    #axis(1, at=1:length(eval(parse(text = paste("design.l$", names(design.l[j]), sep="")))), labels=ln, las = 1) #plot the axis with the levels' names
+    axis(1, at=1:length(ln), labels=ln, las = 1)
     data.to.plot<-numeric()
   }
   mfrow=c(1,1) #return to the standard plot

@@ -1,4 +1,4 @@
-conjoint.estimation <- function(ratings, bundles, design.l, rank=0, conj.contrasts="sum") {
+conjoint.estimation <- function(ratings, bundles, design.l, rank=0, rs=0, conj.contrasts="sum") {
   #  part.worths.R
   #  Copyright 2016 Jordi L. Sintas
   #  This program is free software; you can redistribute it and/or
@@ -27,6 +27,7 @@ conjoint.estimation <- function(ratings, bundles, design.l, rank=0, conj.contras
   #' @param design.l                a list with the conjoint design (attributes and levels)
   #' @param rank                    if rank==1, then transform a ranking into utilities
   #' @param conj.contrasts          if conj.contrasts=="sum", then  options(contrasts = c("contr.sum", "contr.poly")), otherwise, treatment
+  #' @param rs          if rs=1, record individuals' coefficients, other wise not record
   #' @return conjoint.results.all    the object returned by the function
   #' @export
   #' @importFrom stats dist lm predict sd
@@ -117,11 +118,11 @@ conjoint.estimation <- function(ratings, bundles, design.l, rank=0, conj.contras
       conjoint.results <- main.effects.model.fit[c("contrasts","xlevels","coefficients")]
       conjoint.results$nlevels
       conjoint.results$attributes <- names(conjoint.results$contrasts)
-
-      conjoint.fit.summary[[row.names(ratings)[client]]] <- append(conjoint.fit.summary, summary(main.effects.model.fit))
-      #conjoint.fit
-      # storing coefficients
-
+      if (rs==1) {
+        conjoint.fit.summary[[row.names(ratings)[client]]] <- append(conjoint.fit.summary, summary(main.effects.model.fit))
+        #conjoint.fit
+        # storing coefficients
+      }
       conjoint.fit <- cbind(conjoint.fit, main.effects.model.fit[c("coefficients")])
       # conjoint.fit
       conjoint.prediction<-cbind(conjoint.prediction, predict(main.effects.model.fit, df))
@@ -148,7 +149,9 @@ conjoint.estimation <- function(ratings, bundles, design.l, rank=0, conj.contras
   names(conjoint.part.worths) <- level.names
   ###########
   options(contrasts=c("contr.treatment","contr.poly"))
-  conjoint.results.all$summary <- conjoint.fit.summary
+  if (rs==1) {
+    conjoint.results.all$summary <- conjoint.fit.summary
+  }
   conjoint.results.all$fit <- conjoint.fit
   conjoint.results.all$part.worths <- conjoint.part.worths
   conjoint.results.all$prediction <-conjoint.prediction

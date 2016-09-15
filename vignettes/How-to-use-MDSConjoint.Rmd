@@ -128,9 +128,9 @@ El programa `TRANSREG` del paquete de analisis de datos SAS, en cambio, propone 
 >   1    2     3   4     5    6    7     8   9                            
 
 
-# La estimación de las las utilidades parciales de los niveles de los atributos
+# La estimación de las utilidades parciales de los niveles de los atributos
 
-El modelo de análisis conjunto se estima para cada individuo de la muestra. La función `conjoint.estimation()` estima un modelo lineal para cada uno de los individuos y reporta el resultado detallado del modelo lineal. Después muestra una tabla de datos resumen de los parámetros estimados para toda la muestra y finalmente una tabla resumen de las utilidades parciales de cada uno de los niveles de los atributos incorporados en el modelo así como una tabla con las utilidades (o probablidades) teóricas que predice el modelo. La correlación entre esta última tabla y la tabla con las valoraciones empíricas proporcionadas por los individuos nos da una medida del ajuste medio de las estimaciones.
+El modelo de análisis conjunto se estima para cada individuo de la muestra. La función `conjoint.estimation()` estima un modelo lineal para cada uno de los individuos y reporta el resultado detallado del modelo lineal únicamente si se lo pedimos expresamente con el argumento `sr=1`. Después muestra una tabla de datos resumen de los parámetros estimados para toda la muestra y finalmente una tabla resumen de las utilidades parciales de cada uno de los niveles de los atributos incorporados en el modelo así como una tabla con las utilidades (o probablidades) teóricas que predice el modelo. La correlación entre esta última tabla y la tabla con las valoraciones empíricas proporcionadas por los individuos nos da una medida del ajuste medio de las estimaciones.
 
 ## Estimación del modelo para toda la muestra individuos
 
@@ -142,20 +142,20 @@ La función `conjoint.estimation()` toma como argumentos:
 
 3. Una lista con los atributos y niveles de los atributos que forman los perfiles valorados. Esta lista que tendrá un formato de `list`. 
 
-4. Finalmente si las valoraciones de los indiviudos toman la forma de una ordenación de preferencias, entonces `rank=1` indica al programa que estamos ante un modelo no métrico y es necesario realizar una transformación de las preferencias en utilidades. Si el modelo es métrico, entonces no es necesario indicar nada.
+4. Si las valoraciones de los indiviudos toman la forma de una ordenación de preferencias, entonces `rank=1` indica al programa que estamos ante un modelo no métrico y es necesario realizar una transformación de las preferencias en utilidades. Si el modelo es métrico, entonces no es necesario indicar nada.
+
+5. Finalmente si queremos que la función nos facilite los resultados detalladaos de la estimación para algún individuo, podemos utilizar el argumento `rs=1`. Cuídado con este argumento pues al retener todos los resutlados consume mucha memoria. En general con más de 20 individuos no es aconsejable. Se incluye en el función con el objeto de que se puedan obtener resultados detalados para casos concretos en los que queremos hacer un diagnóstico de la estimación del modelo. 
 
 
 ```{r}
-tires.partWorthsAll<-conjoint.estimation(tire$ratings, tire$bundles, tire$design) 
+tires.partWorthsAll<-conjoint.estimation(tire$ratings, tire$bundles, tire$design, rs=1) 
 names(tires.partWorthsAll)
-names(tires.partWorthsAll$summary)
-names(tires.partWorthsAll$summary$Subj2)
 
 ```
 
-La función `conjoint.estimation()` nos devuelve un objeto con formato `list` y cuatro objetos: `r names(tires.partWorthsAll)`.
+La función `conjoint.estimation()` nos devuelve un objeto con formato `list` y cuatro objetos si hemos usados el argumento `rs=1`: `r names(tires.partWorthsAll)`.
 
-El objeto summary, al que se puede acceder añadiendo `summary` al nombre del objecto que hemos creado con la función `conjoint.estimation()`. Como el objeot creado con el resultado se llama `tires.partWorthsAll`  la orden quedaría así: `tires.partWorthsAll$Summary`. La consola nos proporciona los resutlados detallados del modelo para cada uno de los individuos de la muestra. Para acceder a ellos sólo es necesario añadir el nombre del individuo a la orden anterior: `tires.partWorthsAll$Summary$Subj1` en este ejemplo. Si únicamente queremos acceder a los coeficientes estimados, tenemos que añadir `$coefficients` a la orden anterior: `tires.partWorthsAll$Summary$Subj1$coefficients`. En el trozo de código siguiente podemos ver los nombres de los individuos, `names(tires.partWorthsAll$summary)` y podemos observar los resutlados para el individuo `Subj2`:
+Si hemos utilizado el argumento ``rs=1`, el objeto summary, al que se puede acceder añadiendo `summary` al nombre del objecto que hemos creado con la función `conjoint.estimation()`. Como el objeto creado con el resultado se llama `tires.partWorthsAll`  la orden quedaría así: `tires.partWorthsAll$Summary`. La consola nos proporciona los resutlados detallados del modelo para cada uno de los individuos de la muestra. Para acceder a ellos sólo es necesario añadir el nombre del individuo a la orden anterior: `tires.partWorthsAll$Summary$Subj1` en este ejemplo. Si únicamente queremos acceder a los coeficientes estimados, tenemos que añadir `$coefficients` a la orden anterior: `tires.partWorthsAll$Summary$Subj1$coefficients`. En el trozo de código siguiente podemos ver los nombres de los individuos, `names(tires.partWorthsAll$summary)` y podemos observar los resutlados para el individuo `Subj2`:
 
 ```{r}
 names(tires.partWorthsAll$summary)
@@ -177,7 +177,7 @@ knitr::kable(head(tires.partWorthsAll$fit), digits=2, caption = 'Estimaciones: R
 Para completar los resultados de las estimaciones, la función `conjoint.estimation()` nos proporciona una base de datos con las utilidades parciales de cada uno de los niveles, incluidos los que se han eliminado para poder estimar el modelo (si no los hubieramos eliminado, el modelo no se podría haber estimado). La tabla de datos tiene tantas filas como perfiles de producto, *p*, y tantas columnas como niveles de atributos hemos considerado en el análisis: *3+3+3+2=11* en este caso de los neumáticos. Esta forma de mostrar las utilidades parciales de cada nivel nos facilita el cálculo de la importancia de cada atributo como veremos después. De nuevo utilizamos la función `kable()` para dar formato a la tabla de datos.
 
 ```{r, echo=FALSE, results='asis'}
-knitr::kable(head(tires.partWorthsAll$part.worths), digits=2, caption = 'Utilidades parciales: Resultados de los 5 primeros individuos' )
+knitr::kable(head(tires.partWorthsAll$part.worths), digits=2, caption = 'Utilidades parciales: Resultados de los 5 primeros individuos')
 ```
 
 Finalmente la tabla de datos con las predicciones teóricas de la utilidad que reportan los perfiles de producto para toda la muestra se pueden obtener con el objeto `prediction`. Para acceder sólo tenemos que utilizar la orden siguiente: `tires.partWorthsAll$prediction`. Nos proporciona una tabla de datos con tantas filas como individuos han valorado el conjunto de perfiles de producto, *n*, y tantas columnas como perfiles de producto han valorado los individiuos, *p*. Si no queremos ver toda la base de datos, podemos inspeccionar su inicio y final con las funciones `head()` y `tail()`; entre paréntesis sólo tenemos que poner el nombre del objeto, `tires.partWorthsAll$prediction` en este caso. Utilizamos la función `kable()` para dar formato a la tabla de datos.

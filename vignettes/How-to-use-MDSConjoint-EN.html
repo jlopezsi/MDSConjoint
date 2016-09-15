@@ -118,8 +118,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <pre><code>## Loading required package: RCurl</code></pre>
 <pre><code>## Loading required package: bitops</code></pre>
 <pre><code>## Loading required package: XML</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co">#install_github(&quot;jlopezsi/MDSConjoint&quot;)</span>
-<span class="kw">data</span>(<span class="st">&quot;MDSConjointData&quot;</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">data</span>(<span class="st">&quot;MDSConjointData&quot;</span>)
 <span class="kw">names</span>(MDSConjointData)</code></pre></div>
 <pre><code>## [1] &quot;osc&quot;  &quot;tire&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tire&lt;-MDSConjointData$tire
@@ -379,9 +378,9 @@ tire.survey &lt;-<span class="st"> </span><span class="kw">Lma.design</span>(<sp
 <p>1 2 3 4 5 6 7 8 9</p>
 </blockquote>
 </div>
-<div id="la-estimacion-de-las-utilidades-parciales-de-los-niveles-de-los-atributos" class="section level1">
-<h1>La estimación de las utilidades parciales de los niveles de los atributos</h1>
-<p>El modelo de análisis conjunto se estima para cada individuo de la muestra. La función <code>conjoint.estimation()</code> estima un modelo lineal para cada uno de los individuos y reporta el resultado detallado del modelo lineal únicamente si se lo pedimos expresamente con el argumento <code>sr=1</code>. Después muestra una tabla de datos resumen de los parámetros estimados para toda la muestra y finalmente una tabla resumen de las utilidades parciales de cada uno de los niveles de los atributos incorporados en el modelo así como una tabla con las utilidades (o probablidades) teóricas que predice el modelo. La correlación entre esta última tabla y la tabla con las valoraciones empíricas proporcionadas por los individuos nos da una medida del ajuste medio de las estimaciones.</p>
+<div id="la-estimacion-de-las-las-utilidades-parciales-de-los-niveles-de-los-atributos" class="section level1">
+<h1>La estimación de las las utilidades parciales de los niveles de los atributos</h1>
+<p>El modelo de análisis conjunto se estima para cada individuo de la muestra. La función <code>conjoint.estimation()</code> estima un modelo lineal para cada uno de los individuos y reporta el resultado detallado del modelo lineal. Después muestra una tabla de datos resumen de los parámetros estimados para toda la muestra y finalmente una tabla resumen de las utilidades parciales de cada uno de los niveles de los atributos incorporados en el modelo así como una tabla con las utilidades (o probablidades) teóricas que predice el modelo. La correlación entre esta última tabla y la tabla con las valoraciones empíricas proporcionadas por los individuos nos da una medida del ajuste medio de las estimaciones.</p>
 <div id="estimacion-del-modelo-para-toda-la-muestra-individuos" class="section level2">
 <h2>Estimación del modelo para toda la muestra individuos</h2>
 <p>La función <code>conjoint.estimation()</code> toma como argumentos:</p>
@@ -389,14 +388,19 @@ tire.survey &lt;-<span class="st"> </span><span class="kw">Lma.design</span>(<sp
 <li><p>Una base de datos rectangular con las valoraciones de los individuos de los perfiles de producto, que llamamos <em>ratings</em>, con tantas filas como individuos han valorado el conjunto de perfiles de producto, <em>n</em>, y tantas columnas como perfiles de producto hayamos presentado a los individuos, <em>p</em>. Esta tabla de datos tendrá un formato de <code>data frame</code> y una dimensión de <em>n,p</em>.</p></li>
 <li><p>Una base de datos con los perfiles de productos que han valorado los individuos, que llamamos <em>bundles</em>, con tantas filas como perfiles de producto hayan valorado los individuos, <em>p</em>, y tantas columnas como atributos tengan los perfiles de producto, <em>a</em>. Esta matriz que tendrá un formato de <code>data frame</code> y una dimensión de <em>p,a</em>.</p></li>
 <li><p>Una lista con los atributos y niveles de los atributos que forman los perfiles valorados. Esta lista que tendrá un formato de <code>list</code>.</p></li>
-<li><p>Si las valoraciones de los indiviudos toman la forma de una ordenación de preferencias, entonces <code>rank=1</code> indica al programa que estamos ante un modelo no métrico y es necesario realizar una transformación de las preferencias en utilidades. Si el modelo es métrico, entonces no es necesario indicar nada.</p></li>
-<li><p>Finalmente si queremos que la función nos facilite los resultados detalladaos de la estimación para algún individuo, podemos utilizar el argumento <code>rs=1</code>. Cuídado con este argumento pues al retener todos los resutlados consume mucha memoria. En general con más de 20 individuos no es aconsejable. Se incluye en el función con el objeto de que se puedan obtener resultados detalados para casos concretos en los que queremos hacer un diagnóstico de la estimación del modelo.</p></li>
+<li><p>Finalmente si las valoraciones de los indiviudos toman la forma de una ordenación de preferencias, entonces <code>rank=1</code> indica al programa que estamos ante un modelo no métrico y es necesario realizar una transformación de las preferencias en utilidades. Si el modelo es métrico, entonces no es necesario indicar nada.</p></li>
 </ol>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tires.partWorthsAll&lt;-<span class="kw">conjoint.estimation</span>(tire$ratings, tire$bundles, tire$design, <span class="dt">rs=</span><span class="dv">1</span>) 
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tires.partWorthsAll&lt;-<span class="kw">conjoint.estimation</span>(tire$ratings, tire$bundles, tire$design) 
 <span class="kw">names</span>(tires.partWorthsAll)</code></pre></div>
 <pre><code>## [1] &quot;summary&quot;     &quot;fit&quot;         &quot;part.worths&quot; &quot;prediction&quot;</code></pre>
-<p>La función <code>conjoint.estimation()</code> nos devuelve un objeto con formato <code>list</code> y cuatro objetos si hemos usados el argumento <code>rs=1</code>: summary, fit, part.worths, prediction.</p>
-<p>Si hemos utilizado el argumento `<code>rs=1</code>, el objeto summary, al que se puede acceder añadiendo <code>summary</code> al nombre del objecto que hemos creado con la función <code>conjoint.estimation()</code>. Como el objeto creado con el resultado se llama <code>tires.partWorthsAll</code> la orden quedaría así: <code>tires.partWorthsAll$Summary</code>. La consola nos proporciona los resutlados detallados del modelo para cada uno de los individuos de la muestra. Para acceder a ellos sólo es necesario añadir el nombre del individuo a la orden anterior: <code>tires.partWorthsAll$Summary$Subj1</code> en este ejemplo. Si únicamente queremos acceder a los coeficientes estimados, tenemos que añadir <code>$coefficients</code> a la orden anterior: <code>tires.partWorthsAll$Summary$Subj1$coefficients</code>. En el trozo de código siguiente podemos ver los nombres de los individuos, <code>names(tires.partWorthsAll$summary)</code> y podemos observar los resutlados para el individuo <code>Subj2</code>:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(tires.partWorthsAll$summary)</code></pre></div>
+<pre><code>## [1] &quot;Subj1&quot; &quot;Subj2&quot; &quot;Subj3&quot; &quot;Subj4&quot; &quot;Subj5&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(tires.partWorthsAll$summary$Subj2)</code></pre></div>
+<pre><code>##  [1] &quot;Subj1&quot;         &quot;call&quot;          &quot;terms&quot;         &quot;residuals&quot;    
+##  [5] &quot;coefficients&quot;  &quot;aliased&quot;       &quot;sigma&quot;         &quot;df&quot;           
+##  [9] &quot;r.squared&quot;     &quot;adj.r.squared&quot; &quot;fstatistic&quot;    &quot;cov.unscaled&quot;</code></pre>
+<p>La función <code>conjoint.estimation()</code> nos devuelve un objeto con formato <code>list</code> y cuatro objetos: summary, fit, part.worths, prediction.</p>
+<p>El objeto summary, al que se puede acceder añadiendo <code>summary</code> al nombre del objecto que hemos creado con la función <code>conjoint.estimation()</code>. Como el objeot creado con el resultado se llama <code>tires.partWorthsAll</code> la orden quedaría así: <code>tires.partWorthsAll$Summary</code>. La consola nos proporciona los resutlados detallados del modelo para cada uno de los individuos de la muestra. Para acceder a ellos sólo es necesario añadir el nombre del individuo a la orden anterior: <code>tires.partWorthsAll$Summary$Subj1</code> en este ejemplo. Si únicamente queremos acceder a los coeficientes estimados, tenemos que añadir <code>$coefficients</code> a la orden anterior: <code>tires.partWorthsAll$Summary$Subj1$coefficients</code>. En el trozo de código siguiente podemos ver los nombres de los individuos, <code>names(tires.partWorthsAll$summary)</code> y podemos observar los resutlados para el individuo <code>Subj2</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(tires.partWorthsAll$summary)</code></pre></div>
 <pre><code>## [1] &quot;Subj1&quot; &quot;Subj2&quot; &quot;Subj3&quot; &quot;Subj4&quot; &quot;Subj5&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">knitr::<span class="kw">kable</span>(tires.partWorthsAll$summary$Subj2$coefficients, <span class="dt">digits=</span><span class="dv">2</span>, <span class="dt">caption =</span> <span class="st">'Coeficientes del modelo estimado para el individuos Subj2'</span> )</code></pre></div>
@@ -720,12 +724,83 @@ tire.survey &lt;-<span class="st"> </span><span class="kw">Lma.design</span>(<sp
 <p>Aquí vemos primero la estimación del modelo para el primer individuo y los datos de la estimación que tenemos a nuestra disposición.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tires.partWorths1&lt;-<span class="kw">conjoint.estimation</span>(tire$ratings[<span class="dv">1</span>,], tire$bundles, tire$design)
 <span class="kw">names</span>(tires.partWorths1)</code></pre></div>
-<pre><code>## [1] &quot;fit&quot;         &quot;part.worths&quot; &quot;prediction&quot;</code></pre>
+<pre><code>## [1] &quot;summary&quot;     &quot;fit&quot;         &quot;part.worths&quot; &quot;prediction&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(tires.partWorths1$summary$Subj1)</code></pre></div>
-<pre><code>## NULL</code></pre>
+<pre><code>##  [1] &quot;call&quot;          &quot;terms&quot;         &quot;residuals&quot;     &quot;coefficients&quot; 
+##  [5] &quot;aliased&quot;       &quot;sigma&quot;         &quot;df&quot;            &quot;r.squared&quot;    
+##  [9] &quot;adj.r.squared&quot; &quot;fstatistic&quot;    &quot;cov.unscaled&quot;</code></pre>
 <p>Seguidamente mostramos la tabla con los coeficientes del modelo para el primer individuo de la muestra.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">knitr::<span class="kw">kable</span>(tires.partWorths1$summary$Subj1$coefficients, <span class="dt">digits=</span><span class="dv">2</span>, <span class="dt">caption =</span> <span class="st">'Coeficientes del modelo estimado para el individuos Subj1'</span> )</code></pre></div>
-<p>Table: Coeficientes del modelo estimado para el individuos Subj1</p>
+<table>
+<caption>Coeficientes del modelo estimado para el individuos Subj1</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">Estimate</th>
+<th align="right">Std. Error</th>
+<th align="right">t value</th>
+<th align="right">Pr(&gt;|t|)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">5.11</td>
+<td align="right">0.12</td>
+<td align="right">43.86</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="left">Brand1</td>
+<td align="right">-0.11</td>
+<td align="right">0.16</td>
+<td align="right">-0.67</td>
+<td align="right">0.52</td>
+</tr>
+<tr class="odd">
+<td align="left">Brand2</td>
+<td align="right">-0.61</td>
+<td align="right">0.16</td>
+<td align="right">-3.71</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="left">Price1</td>
+<td align="right">2.56</td>
+<td align="right">0.16</td>
+<td align="right">15.51</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">Price2</td>
+<td align="right">-0.11</td>
+<td align="right">0.16</td>
+<td align="right">-0.67</td>
+<td align="right">0.52</td>
+</tr>
+<tr class="even">
+<td align="left">Life1</td>
+<td align="right">-1.28</td>
+<td align="right">0.16</td>
+<td align="right">-7.75</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">Life2</td>
+<td align="right">0.22</td>
+<td align="right">0.16</td>
+<td align="right">1.35</td>
+<td align="right">0.21</td>
+</tr>
+<tr class="even">
+<td align="left">Hazard1</td>
+<td align="right">-0.33</td>
+<td align="right">0.12</td>
+<td align="right">-2.86</td>
+<td align="right">0.02</td>
+</tr>
+</tbody>
+</table>
 <p>Ahora mostramos el resumen de la estimación del modelo para toda la muestra:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">knitr::<span class="kw">kable</span>(<span class="kw">head</span>(tires.partWorths1$fit), <span class="dt">digits=</span><span class="dv">2</span>, <span class="dt">caption =</span> <span class="st">'Estimaciones: Resultados de *j* individuos'</span> )</code></pre></div>
 <table>
@@ -1002,14 +1077,89 @@ tire.survey &lt;-<span class="st"> </span><span class="kw">Lma.design</span>(<sp
 <span class="kw">class</span>(osc.partWorthsAll)</code></pre></div>
 <pre><code>## [1] &quot;list&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(osc.partWorthsAll)</code></pre></div>
-<pre><code>## [1] &quot;fit&quot;         &quot;part.worths&quot; &quot;prediction&quot;</code></pre>
+<pre><code>## [1] &quot;summary&quot;     &quot;fit&quot;         &quot;part.worths&quot; &quot;prediction&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(osc.partWorthsAll$summary)</code></pre></div>
-<pre><code>## NULL</code></pre>
+<pre><code>##  [1] &quot;Respondent1&quot;  &quot;Respondent2&quot;  &quot;Respondent3&quot;  &quot;Respondent4&quot; 
+##  [5] &quot;Respondent5&quot;  &quot;Respondent6&quot;  &quot;Respondent7&quot;  &quot;Respondent8&quot; 
+##  [9] &quot;Respondent9&quot;  &quot;Respondent10&quot; &quot;Respondent11&quot; &quot;Respondent12&quot;
+## [13] &quot;Respondent13&quot; &quot;Respondent14&quot; &quot;Respondent15&quot; &quot;Respondent16&quot;
+## [17] &quot;Respondent17&quot; &quot;Respondent18&quot; &quot;Respondent19&quot; &quot;Respondent20&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(osc.partWorthsAll$summary$Respondent1)</code></pre></div>
-<pre><code>## NULL</code></pre>
+<pre><code>##  [1] &quot;call&quot;          &quot;terms&quot;         &quot;residuals&quot;     &quot;coefficients&quot; 
+##  [5] &quot;aliased&quot;       &quot;sigma&quot;         &quot;df&quot;            &quot;r.squared&quot;    
+##  [9] &quot;adj.r.squared&quot; &quot;fstatistic&quot;    &quot;cov.unscaled&quot;</code></pre>
 <p>Para inspeccionar únicamente los coeficientes estimados utilizamos la orden <code>osc.partWorthsAll$summary$Respondent1$coefficients</code>. Los resultados los podemos ver en la siguiente tabla.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">knitr::<span class="kw">kable</span>(osc.partWorthsAll$summary$Respondent1$coefficients, <span class="dt">digits=</span><span class="dv">2</span>, <span class="dt">caption =</span> <span class="st">'Estimación del modelo lineal: coeficientes del primer individuo'</span> )</code></pre></div>
-<p>Table: Estimación del modelo lineal: coeficientes del primer individuo</p>
+<table>
+<caption>Estimación del modelo lineal: coeficientes del primer individuo</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">Estimate</th>
+<th align="right">Std. Error</th>
+<th align="right">t value</th>
+<th align="right">Pr(&gt;|t|)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">58.64</td>
+<td align="right">1.63</td>
+<td align="right">35.93</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="left">Location1</td>
+<td align="right">9.34</td>
+<td align="right">2.26</td>
+<td align="right">4.13</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">Location2</td>
+<td align="right">3.81</td>
+<td align="right">1.95</td>
+<td align="right">1.96</td>
+<td align="right">0.09</td>
+</tr>
+<tr class="even">
+<td align="left">OfficeSupplies1</td>
+<td align="right">1.05</td>
+<td align="right">2.02</td>
+<td align="right">0.52</td>
+<td align="right">0.62</td>
+</tr>
+<tr class="odd">
+<td align="left">OfficeSupplies2</td>
+<td align="right">-1.35</td>
+<td align="right">2.23</td>
+<td align="right">-0.60</td>
+<td align="right">0.56</td>
+</tr>
+<tr class="even">
+<td align="left">Furniture1</td>
+<td align="right">-20.36</td>
+<td align="right">1.46</td>
+<td align="right">-13.94</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">Computers1</td>
+<td align="right">-2.35</td>
+<td align="right">2.28</td>
+<td align="right">-1.03</td>
+<td align="right">0.33</td>
+</tr>
+<tr class="even">
+<td align="left">Computers2</td>
+<td align="right">-2.98</td>
+<td align="right">1.95</td>
+<td align="right">-1.53</td>
+<td align="right">0.16</td>
+</tr>
+</tbody>
+</table>
 <div id="resumimos-las-estimaciones-en-una-tabla-de-datos" class="section level3">
 <h3>Resumimos las estimaciones en una tabla de datos</h3>
 <p>En esta tabla podemos ver el inicio de la tabla de datos con las estimaciones de los 6 primeros individuos de la muestra,</p>

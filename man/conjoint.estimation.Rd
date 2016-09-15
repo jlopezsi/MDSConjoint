@@ -4,7 +4,7 @@
 \alias{conjoint.estimation}
 \title{conjoint.estimation}
 \usage{
-conjoint.estimation(ratings, bundles, design.l, rank = 0,
+conjoint.estimation(ratings, bundles, design.l, rank = 0, rs = 0,
   conj.contrasts = "sum")
 }
 \arguments{
@@ -15,6 +15,8 @@ conjoint.estimation(ratings, bundles, design.l, rank = 0,
 \item{design.l}{a list with the conjoint design (attributes and levels)}
 
 \item{rank}{if rank==1, then transform a ranking into utilities}
+
+\item{rs}{if rs=1, record individuals' coefficients, other wise not record}
 
 \item{conj.contrasts}{if conj.contrasts=="sum", then  options(contrasts = c("contr.sum", "contr.poly")), otherwise, treatment}
 }

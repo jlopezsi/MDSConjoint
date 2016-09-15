@@ -10,7 +10,6 @@ if(!require(support.CEs)){
   library(support.CEs) 
 
 ## ------------------------------------------------------------------------
-#install_github("jlopezsi/MDSConjoint")
 data("MDSConjointData")
 names(MDSConjointData)
 tire<-MDSConjointData$tire
@@ -40,8 +39,10 @@ print(questionnaire(tire.survey))  # print survey design for review
 #sink() # send output back to the screen
 
 ## ------------------------------------------------------------------------
-tires.partWorthsAll<-conjoint.estimation(tire$ratings, tire$bundles, tire$design, rs=1) 
+tires.partWorthsAll<-conjoint.estimation(tire$ratings, tire$bundles, tire$design) 
 names(tires.partWorthsAll)
+names(tires.partWorthsAll$summary)
+names(tires.partWorthsAll$summary$Subj2)
 
 
 ## ------------------------------------------------------------------------
@@ -52,7 +53,7 @@ knitr::kable(tires.partWorthsAll$summary$Subj2$coefficients, digits=2, caption =
 knitr::kable(head(tires.partWorthsAll$fit), digits=2, caption = 'Estimaciones: Resultados de los 6 primeros individuos' )
 
 ## ---- echo=FALSE, results='asis'-----------------------------------------
-knitr::kable(head(tires.partWorthsAll$part.worths), digits=2, caption = 'Utilidades parciales: Resultados de los 5 primeros individuos')
+knitr::kable(head(tires.partWorthsAll$part.worths), digits=2, caption = 'Utilidades parciales: Resultados de los 5 primeros individuos' )
 
 ## ---- echo=FALSE, results='asis'-----------------------------------------
 knitr::kable(head(t(tires.partWorthsAll$prediction)), digits=2, caption = 'Estimaciones: Resultados de los 6 primeros individuos' )
