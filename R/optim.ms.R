@@ -18,6 +18,7 @@ optim.ms.first.choice <- function(ratings, bundles, market.profiles,
   #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   #
   #' @title Identifies the product profiles that maximazes  market share, maximum utility rule
+  #' @aliases optim.ms.fe
   #' @keywords optim market share
   #' @description
   #' Computes market share for actual product profiles as well as for all possible profiles
@@ -111,6 +112,7 @@ optim.ms.utility.share <- function(ratings, bundles, market.profiles,
   #
   #' @title Identifies the product profiles that maximazes  market share, share of utility rule
   #' @keywords optim market share
+  #' @aliases  optim.ms.us
   #' @description
   #' Computes market share for actual profiles as well as for all possible profiles
   #' in order to indentify the bundle that maximazes market share given actual profiles
@@ -125,6 +127,7 @@ optim.ms.utility.share <- function(ratings, bundles, market.profiles,
   #' @param rank                    if rank==1, then transform a ranking into utilities
   #' @param hpb                     if hpb==1, then hide progress bar. This is for markdowm
   #' @return optim.list             a list with with the optim profile as well as optim market share
+  #' @export
   #' @examples
   #' data(MDSConjointData)
   #' names(MDSConjointData)
@@ -137,7 +140,7 @@ optim.ms.utility.share <- function(ratings, bundles, market.profiles,
   #' design<-osc$design
   #' osc.ms.op.us<-optim.ms.utility.share(rat, bun, mp, design, hpb=1)
   #' osc.ms.op.us
-  #' @export
+
   ####################### other variabels in the function ##############
   # rivals                  the number of competitors
   # n.bundles               the number of possible combinations
@@ -202,6 +205,7 @@ optim.ms.logit <- function(ratings, bundles, market.profiles, design, rank=0, hp
   #
   #' @title Identifies the product profiles that maximazes  market share, logit rule
   #' @keywords optim market share
+  #' @aliases  optim.ms.logit
   #' @description
   #' Computes market share for actual profiles as well as for all possible profiles
   #' in order to indentify the bundle that maximazes market share given actual profiles

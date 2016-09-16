@@ -5,6 +5,7 @@ transform2factor<-function(df){
   #' This function is a convenient way to  quickly prepare data from other packages to
   #' test with this package
   #' @param df  A data frame with variables in numeric format
+  #' @aliases transform.df.variables.to.factors
   #' @return df a data frame with all variables in factor format
   #' @export
   #' @examples
@@ -30,6 +31,7 @@ transform2factor<-function(df){
 
 transform2utilities <- function(y){
   #' @title transform2utilities
+  #' @aliases transform.ranking.to.utilities
   #' @description
   #' This function transforms a vector of ranked profiles into a vector of utilities
   #' It uses SAS monotonic transformation of preference judgements as described in SAS technical Report R-109, p. 2.
@@ -53,6 +55,7 @@ transform2utilities <- function(y){
 
 df2list<-function(df){
   #' @title df2list
+  #' @aliases from.data.frame.to.list
   #' @description
   #' This function transforms a data frame's into a list according to columns
   #' @param df  A data frame
@@ -68,4 +71,23 @@ df2list<-function(df){
   names(df.list)<-names(df)
   df.list <-lapply(df.list, function(x) x[!is.na(x)])
   return(df.list)
+}
+
+centers.hclust <- function (bases.hclust, bases, s) {
+  #' @title centers.hclust
+  #' @aliases mean.values.clusters
+  #' @description
+  #' This function comnputs the mean value of bases in the segments
+  #' we want to form later with k-means.
+  #' @param bases.hclust   is an hclust objet
+  #' @param bases         is a dats frame with segmentation bases used in the hclust object
+  #' @return centros.bases  a matrix with centers
+  #' @export
+   centros.bases<-tapply(
+    as.matrix(bases),
+    list(rep(cutree(bases.hclust, s),
+             ncol(as.matrix(bases))),
+         col(as.matrix(bases))),
+    mean)
+  return(centros.bases)
 }

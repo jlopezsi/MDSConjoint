@@ -2,6 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{df2list}
 \alias{df2list}
+\alias{from.data.frame.to.list}
 \title{df2list}
 \usage{
 df2list(df)

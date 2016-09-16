@@ -272,9 +272,9 @@ visualize.importance <- function(part.worths, importance, design.l) {
   pw.means <-apply(part.worths, 2, mean) #get part worths means
   imp.means <- apply(importance, 2, mean) # get attributes' importance
   n.attributes<-length(design.l) #get the number of attributes
-  r<-abs(1+(n.attributes%/%2)) #define the number of lines of a composed plot. Only works with Rñ gui
-  r # check the number of rows in the composed plot
-  mfrow=c(r, 2) # define the grid of the composed plot
+  #r<-abs(1+(n.attributes%/%2)) #define the number of lines of a composed plot. Only works with Rñ gui
+  #r # check the number of rows in the composed plot
+  #mfrow=c(r, 2) # define the grid of the composed plot
   proportions <- as.numeric(imp.means) #define the data percentages for the pie plot
   class(proportions)
   lbls <-names(imp.means) # get the labels of data
@@ -295,5 +295,5 @@ visualize.importance <- function(part.worths, importance, design.l) {
     axis(1, at=1:length(ln), labels=ln, las = 1)
     data.to.plot<-numeric()
   }
-  mfrow=c(1,1) #return to the standard plot
+  #mfrow=c(1,1) #return to the standard plot
 }
