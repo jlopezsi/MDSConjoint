@@ -20,7 +20,7 @@ ms
 }
 \description{
 This function computes the market share of  product profiles
-according to the utility share rule. Uses treatment effects for estimating part worths of profiles;
+according to the utility share rule (also known as BTL rule). Uses treatment effects for estimating part worths of profiles;
 is the data frame of profiles for which we are going to compute market
 profiles is a matrix of product profiles in the market (rows)
 by attributes (columns); ratings is a matrix of clients (rows) by

@@ -81,7 +81,9 @@ centers.hclust <- function (bases.hclust, bases, s) {
   #' we want to form later with k-means.
   #' @param bases.hclust   is an hclust objet
   #' @param bases         is a dats frame with segmentation bases used in the hclust object
+  #' @param s   number of clusters
   #' @return centros.bases  a matrix with centers
+  #' @importFrom stats cutree
   #' @export
    centros.bases<-tapply(
     as.matrix(bases),

@@ -224,6 +224,7 @@ compute.importance.for.one <- function(conjoint.results){
 }
 
 ########### plot importances #################
+
 visualize.importance <- function(part.worths, importance, design.l) {
   #  Copyright 2016 Jordi L. Sintas
   #  This program is free software; you can redistribute it and/or

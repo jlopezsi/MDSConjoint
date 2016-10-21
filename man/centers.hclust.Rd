@@ -11,6 +11,8 @@ centers.hclust(bases.hclust, bases, s)
 \item{bases.hclust}{is an hclust objet}
 
 \item{bases}{is a dats frame with segmentation bases used in the hclust object}
+
+\item{s}{number of clusters}
 }
 \value{
 centros.bases  a matrix with centers
